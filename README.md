@@ -16,15 +16,29 @@ npm install
 
 # Descargar los navegadores de Playwright (Chromium, Firefox, WebKit)
 npx playwright install --with-deps
+
+# Crear tu archivo de variables de entorno
+cp .env.example .env
 ```
+
+### Variables de entorno (`.env`)
+
+`playwright.config.ts` carga el archivo `.env` con [dotenv](https://github.com/motdotla/dotenv). El `.env` está en `.gitignore`, así que no se sube al repo. Solo se versiona `.env.example`.
+
+| Variable | Uso |
+|---|---|
+| `BASE_URL` | URL base de la app. Se asigna a `use.baseURL`, así puedes usar `page.goto('/')` |
+| `APP_USER` / `APP_PASSWORD` | Credenciales de prueba (opcional), se leen con `process.env.APP_USER` |
+
+Puedes agregar las variables que necesites. Recuerda documentarlas también en `.env.example`.
 
 El servidor MCP `playwright-test` ya está configurado en `.mcp.json`. Claude Code lo levanta solo (`npx playwright run-test-mcp-server`) al abrir el proyecto. Si te pide aprobarlo, acéptalo.
 
 ### Adaptar la plantilla a un nuevo proyecto
 
 1. Cambia `name` y `description` en `package.json`.
-2. Configura el seed (`tests/seed.spec.ts`) con la URL y el estado inicial de tu app (ver abajo).
-3. Opcional: define `baseURL` en `playwright.config.ts` (`use.baseURL`) para usar rutas relativas como `page.goto('/')`.
+2. Define `BASE_URL` (y credenciales si aplica) en tu `.env`.
+3. Configura el seed (`tests/seed.spec.ts`) con el estado inicial de tu app (ver abajo).
 4. Ajusta los navegadores en `projects` de `playwright.config.ts` según lo que necesites cubrir.
 
 ## 🚀 3. Uso
@@ -35,14 +49,14 @@ El flujo es: **seed → planner → specs → generator → tests → healer**.
 
 El seed es el test base que los agentes ejecutan para dejar la página en su estado inicial antes de explorar o generar código. Todo lo que pongas ahí (navegación, login, fixtures) lo heredan los tests generados.
 
-Ejemplo genérico (reemplaza la URL, los selectores y las credenciales por los de tu app):
+Ejemplo genérico (la URL viene de `BASE_URL` en `.env`; ajusta los selectores a tu app):
 
 ```ts
 import { test, expect } from '@playwright/test';
 
 test.describe('Test group', () => {
   test('seed', async ({ page }) => {
-    await page.goto('https://tu-app.com');
+    await page.goto('/');
 
     // Opcional: login u otro estado inicial
     // await page.getByLabel('Usuario').fill(process.env.APP_USER!);
@@ -52,7 +66,7 @@ test.describe('Test group', () => {
 });
 ```
 
-> Usa variables de entorno para las credenciales en lugar de escribirlas en el código.
+> Guarda las credenciales en `.env` en lugar de escribirlas en el código.
 
 ### Agents (`.claude/agents/`)
 
@@ -95,6 +109,7 @@ Los tests se ejecutan en Chromium, Firefox y WebKit, y guardan screenshots, vide
 ```text
 .
 ├── .claude/agents/        # Agentes de Playwright: planner, generator, healer
+├── .env.example           # Plantilla de variables de entorno (copiar a .env)
 ├── .mcp.json              # Servidor MCP playwright-test para Claude Code
 ├── playwright.config.ts   # Configuración de Playwright (navegadores, reporter, evidencias)
 ├── specs/                 # Planes de pruebas en Markdown (generados por el planner)
